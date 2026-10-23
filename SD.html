@@ -2,9 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SheepSheep Burger ERP - HCM Module (Standalone)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+<title>SheepSheep Burger ERP - SD Module (Standalone)</title>
 <style>
+/* ============ SheepSheep Burger ERP - SD Module 独立运行版 ============ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f0f2f5; color: #333; }
 
@@ -44,7 +45,7 @@ body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: #f0f2
 .table-header h3 { font-size: 16px; color: #2c3e50; }
 .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
 .btn-primary { background: #3498db; color: #fff; }
-.btn-danger { background: #e74c3c; color: #fff; }
+.btn-success { background: #27ae60; color: #fff; }
 .btn-sm { padding: 4px 10px; font-size: 12px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
@@ -52,7 +53,9 @@ th { background: #f8f9fa; font-weight: 600; color: #2c3e50; }
 tr:hover { background: #f8f9fa; }
 
 .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
-.badge-ok { background: #d4edda; color: #155724; }
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-processing { background: #cce5ff; color: #004085; }
+.badge-completed { background: #d4edda; color: #155724; }
 
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
 .modal-overlay.show { display: flex; }
@@ -73,7 +76,7 @@ tr:hover { background: #f8f9fa; }
 <div id="loginPage">
   <div class="login-box">
     <h1>🍔 SheepSheep Burger</h1>
-    <p class="subtitle">HCM Module - Human Capital Management</p>
+    <p class="subtitle">SD Module - Sales &amp; Distribution</p>
     <input type="text" id="loginUser" placeholder="Username" value="admin">
     <input type="password" id="loginPass" placeholder="Password" value="admin123">
     <button onclick="login()">Login</button>
@@ -90,7 +93,7 @@ tr:hover { background: #f8f9fa; }
 <div id="mainApp">
   <div class="sidebar">
     <div class="logo">🐑 SheepSheep<span> Burger</span></div>
-    <a href="#" class="nav-link active"><span>👥</span>HR (HCM)</a>
+    <a href="#" class="nav-link active"><span>🛒</span>Sales (SD)</a>
     <div class="user-info">
       <div id="currentUser">Admin</div>
       <div id="currentRole" style="color:#7f8c8d">Administrator</div>
@@ -99,89 +102,82 @@ tr:hover { background: #f8f9fa; }
 
   <div class="main-content">
     <div class="top-bar">
-      <h2>Human Capital Management (HCM)</h2>
+      <h2>Sales &amp; Distribution (SD)</h2>
       <span class="logout" onclick="logout()">Logout →</span>
     </div>
 
-    <div id="hcmAlert"></div>
+    <div id="sdAlert"></div>
 
     <div class="card-grid">
       <div class="stat-card bg-blue">
-        <div class="label">Total Employees</div>
-        <div class="value" id="statEmpCount">-</div>
+        <div class="label">Total Orders</div>
+        <div class="value" id="statTotalOrders">-</div>
       </div>
       <div class="stat-card bg-green">
-        <div class="label">Departments</div>
-        <div class="value" id="statDeptCount">-</div>
+        <div class="label">Total Revenue</div>
+        <div class="value" id="statRevenue">-</div>
       </div>
       <div class="stat-card bg-orange">
-        <div class="label">Avg Hourly Wage</div>
-        <div class="value" id="statAvgWage">-</div>
+        <div class="label">Pending Orders</div>
+        <div class="value" id="statPendingOrders">-</div>
       </div>
     </div>
 
     <div class="table-container">
       <div class="table-header">
-        <h3>Employee Roster (HCM)</h3>
-        <button class="btn btn-primary" onclick="openEmployeeModal()">+ Add Employee</button>
+        <h3>Sales Orders (SD)</h3>
+        <button class="btn btn-primary" onclick="openOrderModal()">+ New Order</button>
       </div>
       <table>
         <thead>
-          <tr><th>ID</th><th>Name</th><th>Role</th><th>Department</th><th>Hourly Wage</th><th>Monthly Hours</th><th>Status</th><th>Action</th></tr>
+          <tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Action</th></tr>
         </thead>
-        <tbody id="employeeBody"></tbody>
+        <tbody id="ordersBody"></tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- Employee Modal -->
-<div class="modal-overlay" id="empModal">
+<!-- Order Modal -->
+<div class="modal-overlay" id="orderModal">
   <div class="modal">
-    <h3>Add New Employee</h3>
+    <h3>Create New Sales Order</h3>
     <div class="form-group">
-      <label>Name</label>
-      <input type="text" id="empName" placeholder="e.g. Cook Zhou">
+      <label>Customer Name</label>
+      <input type="text" id="ordCustomer" placeholder="e.g. Walk-in Customer">
     </div>
     <div class="form-group">
-      <label>Role</label>
-      <select id="empRole">
-        <option>Store Manager</option>
-        <option>Head Chef</option>
-        <option>Cook</option>
-        <option>Cashier</option>
-        <option>Delivery Rider</option>
-        <option>Accountant</option>
+      <label>Channel</label>
+      <select id="ordChannel">
+        <option>Dine-in</option>
+        <option>Takeaway</option>
+        <option>Delivery Platform</option>
       </select>
     </div>
     <div class="form-group">
-      <label>Department</label>
-      <select id="empDept">
-        <option>Management</option>
-        <option>Kitchen</option>
-        <option>Front of House</option>
-        <option>Delivery</option>
-        <option>Finance</option>
-      </select>
+      <label>Classic Burger (Qty) - $8.50</label>
+      <input type="number" id="ordClassic" value="1" min="0">
     </div>
     <div class="form-group">
-      <label>Hourly Wage ($)</label>
-      <input type="number" id="empWage" value="12" min="1">
+      <label>Cheese Burger (Qty) - $10.50</label>
+      <input type="number" id="ordCheese" value="0" min="0">
     </div>
     <div class="form-group">
-      <label>Monthly Hours</label>
-      <input type="number" id="empHours" value="176" min="1">
+      <label>Double Burger (Qty) - $13.50</label>
+      <input type="number" id="ordDouble" value="0" min="0">
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal('empModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addEmployee()">Add Employee</button>
+      <button class="btn" onclick="closeModal('orderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createOrder()">Submit Order</button>
     </div>
   </div>
 </div>
 
 <script>
+// ============ SD Module - Data Layer (独立 localStorage 键) ============
+const DB_KEY = 'sheepsheep_erp_sd';
 
-const DB_KEY = 'sheepsheep_erp_hcm';
+const PRICES = { classic: 8.5, cheese: 10.5, double: 13.5 };
 
 function getDB() {
   let db = localStorage.getItem(DB_KEY);
@@ -193,15 +189,12 @@ function getDB() {
         { username: 'kitchen', password: 'kitchen123', role: 'Kitchen Staff', name: 'Chef Wang' },
         { username: 'finance', password: 'finance123', role: 'Finance', name: 'Accountant Zhang' }
       ],
-      employees: [
-        { id: 'E001', name: 'Manager Li', role: 'Store Manager', dept: 'Management', wage: 25, hours: 176, status: 'Active' },
-        { id: 'E002', name: 'Chef Wang', role: 'Head Chef', dept: 'Kitchen', wage: 18, hours: 200, status: 'Active' },
-        { id: 'E003', name: 'Cook Liu', role: 'Cook', dept: 'Kitchen', wage: 14, hours: 200, status: 'Active' },
-        { id: 'E004', name: 'Cashier Zhao', role: 'Cashier', dept: 'Front of House', wage: 12, hours: 168, status: 'Active' },
-        { id: 'E005', name: 'Delivery Sun', role: 'Delivery Rider', dept: 'Delivery', wage: 10, hours: 180, status: 'Active' },
-        { id: 'E006', name: 'Accountant Zhang', role: 'Accountant', dept: 'Finance', wage: 20, hours: 160, status: 'Active' }
+      orders: [
+        { id: 'ORD-001', customer: 'Walk-in Customer', channel: 'Dine-in', items: { classic: 2, cheese: 1, double: 0 }, total: 28.5, status: 'completed', date: '2026-10-12' },
+        { id: 'ORD-002', customer: 'Meituan Delivery', channel: 'Delivery Platform', items: { classic: 1, cheese: 2, double: 1 }, total: 42.0, status: 'processing', date: '2026-10-12' },
+        { id: 'ORD-003', customer: 'Office Group', channel: 'Takeaway', items: { classic: 5, cheese: 3, double: 2 }, total: 95.5, status: 'pending', date: '2026-10-12' }
       ],
-      nextEmpId: 7
+      nextOrderId: 4
     };
     localStorage.setItem(DB_KEY, JSON.stringify(db));
     return db; // 首次初始化直接返回对象，避免 JSON.parse(对象) 报错
@@ -224,7 +217,7 @@ function login() {
     document.getElementById('currentRole').textContent = user.role;
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    renderEmployees();
+    renderOrders();
   } else {
     alert('Invalid username or password!');
   }
@@ -237,58 +230,90 @@ function logout() {
 }
 
 // ============ Rendering ============
-function renderEmployees() {
+function renderOrders() {
   const db = getDB();
-  document.getElementById('employeeBody').innerHTML = db.employees.map(e => `
+  document.getElementById('ordersBody').innerHTML = db.orders.map(o => `
     <tr>
-      <td>${e.id}</td><td>${e.name}</td><td>${e.role}</td><td>${e.dept}</td>
-      <td>$${e.wage}/hr</td><td>${e.hours}h</td>
-      <td><span class="badge badge-ok">${e.status}</span></td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteEmployee('${e.id}')">Delete</button></td>
+      <td>${o.id}</td><td>${o.customer}<br><small style="color:#999">${o.channel}</small></td>
+      <td>${formatItems(o.items)}</td>
+      <td>$${o.total.toFixed(2)}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td>
+        ${o.status === 'pending' ? `<button class="btn btn-sm btn-success" onclick="approveOrder('${o.id}')">Approve</button>` : ''}
+        ${o.status === 'processing' ? `<button class="btn btn-sm btn-primary" onclick="completeOrder('${o.id}')">Complete</button>` : ''}
+      </td>
     </tr>`).join('');
 
-  document.getElementById('statEmpCount').textContent = db.employees.length;
-  document.getElementById('statDeptCount').textContent = new Set(db.employees.map(e => e.dept)).size;
-  document.getElementById('statAvgWage').textContent = '$' + (db.employees.reduce((s, e) => s + e.wage, 0) / db.employees.length).toFixed(2) + '/hr';
+  // 统计卡片
+  document.getElementById('statTotalOrders').textContent = db.orders.length;
+  document.getElementById('statRevenue').textContent = '$' + db.orders.reduce((s, o) => s + o.total, 0).toFixed(2);
+  document.getElementById('statPendingOrders').textContent = db.orders.filter(o => o.status === 'pending').length;
+}
+
+// ============ Helpers ============
+function formatItems(items) {
+  const parts = [];
+  if (items.classic) parts.push(`${items.classic}x Classic`);
+  if (items.cheese) parts.push(`${items.cheese}x Cheese`);
+  if (items.double) parts.push(`${items.double}x Double`);
+  return parts.join(', ') || '-';
+}
+
+function statusBadge(status) {
+  const map = { pending: 'badge-pending', processing: 'badge-processing', completed: 'badge-completed' };
+  return `<span class="badge ${map[status] || 'badge-pending'}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
 }
 
 function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-function openEmployeeModal() { openModal('empModal'); }
+function openOrderModal() { openModal('orderModal'); }
 
 function showAlert(msg) {
-  document.getElementById('hcmAlert').innerHTML = `<div class="alert alert-success">${msg}</div>`;
-  setTimeout(() => { document.getElementById('hcmAlert').innerHTML = ''; }, 4000);
+  document.getElementById('sdAlert').innerHTML = `<div class="alert alert-success">${msg}</div>`;
+  setTimeout(() => { document.getElementById('sdAlert').innerHTML = ''; }, 3000);
 }
 
 // ============ Business Actions ============
-function addEmployee() {
+function createOrder() {
   const db = getDB();
-  const name = document.getElementById('empName').value.trim();
-  if (!name) { alert('Please enter employee name!'); return; }
-  const role = document.getElementById('empRole').value;
-  const dept = document.getElementById('empDept').value;
-  const wage = parseInt(document.getElementById('empWage').value) || 0;
-  const hours = parseInt(document.getElementById('empHours').value) || 0;
-  db.employees.push({
-    id: 'E' + String(db.nextEmpId++).padStart(3, '0'),
-    name, role, dept, wage, hours, status: 'Active'
-  });
+  const customer = document.getElementById('ordCustomer').value || 'Walk-in';
+  const channel = document.getElementById('ordChannel').value;
+  const classic = parseInt(document.getElementById('ordClassic').value) || 0;
+  const cheese = parseInt(document.getElementById('ordCheese').value) || 0;
+  const double = parseInt(document.getElementById('ordDouble').value) || 0;
+  if (classic + cheese + double === 0) { alert('Please order at least 1 burger!'); return; }
+  const total = classic * PRICES.classic + cheese * PRICES.cheese + double * PRICES.double;
+  const newOrder = {
+    id: 'ORD-' + String(db.nextOrderId++).padStart(3, '0'),
+    customer, channel, items: { classic, cheese, double },
+    total: parseFloat(total.toFixed(2)), status: 'pending', date: new Date().toISOString().slice(0, 10)
+  };
+  db.orders.unshift(newOrder);
   saveDB(db);
-  closeModal('empModal');
-  document.getElementById('empName').value = '';
-  renderEmployees();
-  showAlert(`Employee ${name} added.`);
+  closeModal('orderModal');
+  renderOrders();
+  showAlert(`Order ${newOrder.id} created! Total: $${newOrder.total.toFixed(2)}`);
 }
 
-function deleteEmployee(id) {
+function approveOrder(id) {
   const db = getDB();
-  const emp = db.employees.find(e => e.id === id);
-  if (emp && confirm(`Delete ${emp.name} (${id})?`)) {
-    db.employees = db.employees.filter(e => e.id !== id);
+  const order = db.orders.find(o => o.id === id);
+  if (order) {
+    order.status = 'processing';
     saveDB(db);
-    renderEmployees();
-    showAlert(`Employee ${id} deleted.`);
+    renderOrders();
+    showAlert(`Order ${id} approved. Production will be generated in the PP module.`);
+  }
+}
+
+function completeOrder(id) {
+  const db = getDB();
+  const order = db.orders.find(o => o.id === id);
+  if (order) {
+    order.status = 'completed';
+    saveDB(db);
+    renderOrders();
+    showAlert(`Order ${id} completed!`);
   }
 }
 
